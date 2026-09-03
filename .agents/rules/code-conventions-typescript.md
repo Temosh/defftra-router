@@ -16,10 +16,10 @@ import { normalizeUserName } from '../utils/normalizeUserName';
 Use `satisfies` when you want type checking without widening inferred literals.
 
 ```ts
-const routeConfig = {
+const viewConfig = {
   defaultPageSize: 25,
   mode: 'compact',
-} satisfies RouteConfig;
+} satisfies ViewConfig;
 ```
 
 ## Type Vs Interface
@@ -93,7 +93,7 @@ type Status = (typeof STATUSES)[number];
 - Use named exports by default.
 - Use default exports only when required by the framework or established project convention.
 - Avoid broad barrel files that hide ownership boundaries or create circular imports.
-- Keep cross-boundary imports aligned with the relevant architecture rule, such as `architecture-react-app.md` for React apps.
+- Keep cross-boundary imports aligned with `docs/architecture.md` and the concrete source layout recorded in `AGENTS.md`.
 
 ## Tests
 

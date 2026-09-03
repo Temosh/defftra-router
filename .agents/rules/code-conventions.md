@@ -1,11 +1,9 @@
 # Code Conventions
 
-This file contains language-agnostic conventions. Keep language and framework specifics in separate rule files, for example:
+This file contains language-agnostic conventions. Keep language and framework specifics in separate rule files, such as:
 
-- `code-conventions-java.md`
 - `code-conventions-typescript.md`
 - `code-conventions-react.md`
-- `code-conventions-swift-macos.md`
 
 When a project adds another language or major framework, create a dedicated rule file instead of growing this file with unrelated sections.
 

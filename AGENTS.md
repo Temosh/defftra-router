@@ -1,87 +1,100 @@
 # AGENTS.md
 
-This repository is a reusable project template for AI-assisted development. It is intentionally technology-neutral until a real project chooses its stack, domain, and delivery workflow.
+Defftra Router is an open-source, UI-driven local HTTP reverse proxy for developers. It routes `.localhost` hostnames to local development servers and applies arbitrary, ordered request-header transformations. Windows 11 without administrator rights is the primary target; macOS is also supported.
 
-Use this file as the short entry point for Claude Code, Codex, Copilot, Cline, and other agents. Put detailed guidance in `.agents/rules/` and keep provider-specific folders as links or thin references to the same source of truth.
-
-Any convention expected from every agent must be defined in this repository, either directly in `AGENTS.md` or in a referenced file under `.agents/`. Do not rely solely on provider-specific prompts, injected instructions, global configuration, or private agent memory for project rules.
+Keep this file as the short entry point for all coding agents. Detailed guidance belongs in `.agents/rules/`, product facts in `docs/`, and durable workstream notes in `.agents/tasks/`.
 
 ## Before Working
 
-1. Read the project-specific brief when it exists: `docs/project-brief.md`.
-2. Read the relevant rules in `.agents/rules/` for the language, framework, and task.
-3. Inspect the existing code before making assumptions about architecture or style.
-4. Prefer small, focused changes that preserve user work already present in the tree.
+1. Read `docs/project-brief.md` and `docs/architecture.md`.
+2. Read `.agents/rules/stack.md` and the task-relevant rules listed below.
+3. Inspect the current source and manifests before assuming commands or implementation details.
+4. Preserve user work and prefer small, focused changes.
+5. Update documentation when a change affects documented behavior or decisions.
 
-## Diagrams
+## Product Guardrails
 
-When a diagram would improve communication, use Mermaid wherever Mermaid can express the content. This applies to architecture diagrams, workflows, sequences, state transitions, dependency graphs, decision trees, entity relationships, and similar visual structures.
-
-Do not create ASCII-art, ANSI-art, or Unicode box-drawing diagrams. Use plain prose, lists, or tables only when the content is not meaningfully a diagram or Mermaid cannot express it clearly. Follow `.agents/rules/documentation-and-diagrams.md` for the complete rule.
-
-## Task Notes
-
-Use `.agents/tasks/` for task-specific agent working notes that should persist across sessions, such as investigation findings, implementation plans, decisions, and handoff state.
-
-Create one subfolder per meaningful task or workstream, for example `.agents/tasks/<task-name>/`, and name the main task note `TASK.md` to mirror the `SKILL.md` convention. Use `TASK.md` for the objective, current state, plan, decisions, findings, and handoff notes. Keep reusable guidance in `.agents/rules/`, project facts and user-facing documentation in `docs/`, and transient scratch notes in the current conversation unless they need to be handed off.
-
-## Commands
-
-Replace these placeholders when a project is created:
-
-```bash
-<package-manager> install     # Install dependencies
-<package-manager> dev         # Start local development server
-<package-manager> build       # Build or compile the project
-<package-manager> test        # Run tests
-<package-manager> lint        # Run linting
-<package-manager> format      # Format code
-```
-
-If a command is unknown, inspect project files such as `package.json`, `pom.xml`, `build.gradle`, `pyproject.toml`, `Cargo.toml`, `Makefile`, or CI configuration before guessing.
-
-## Project
-
-Placeholder: describe the product, target users, business domain, critical workflows, and non-goals here.
-
-Recommended project docs:
-
-| File | Purpose |
-|------|---------|
-| `docs/project-brief.md` | Product context, users, goals, terminology |
-| `docs/architecture.md` | System architecture and folder ownership |
-| `docs/domain-model.md` | Core domain entities, invariants, workflows |
-| `docs/api.md` | External/internal API contracts |
-| `docs/ui.md` | UX, layout, design-system rules for frontend projects |
-| `docs/operations.md` | Deployment, observability, runbooks |
+- Keep all route and header behavior domain-neutral. Never hardcode authentication, tenant, realm, company, or specific-header semantics.
+- Bind only to loopback by default. Do not expose the proxy or management interface to the LAN by default.
+- V1 accepts HTTP local traffic and HTTP upstream targets only.
+- Stream proxy traffic; do not buffer whole request or response bodies.
+- Do not keep traffic history or log request bodies or header values.
+- Persist configuration as human-readable, versioned JSON. Do not introduce a database.
+- Route changes must take effect without restarting the process.
+- No Electron, Docker requirement, polling loops, telemetry, or unnecessary workers.
+- Treat the application as a local development tool, not a production security boundary.
 
 ## Stack
 
-Placeholder: list the actual runtime, language versions, frameworks, package managers, and forbidden dependencies once the project stack is chosen.
+- Node.js 26 and TypeScript.
+- pnpm, with a committed `pnpm-lock.yaml` once the project is scaffolded.
+- React compiled by Vite to static assets served by the Node.js process.
+- Prefer Node.js built-in APIs and keep production dependencies minimal.
+- Vitest for unit and integration tests, React Testing Library for component behavior, and Playwright for selected end-to-end flows.
+- ESLint and Prettier for linting and formatting.
 
-## Rule Index
+Use latest stable package versions compatible with Node.js 26. Record resolved versions in the manifest and lockfile; do not use this policy as a reason for unrelated upgrades.
 
-Use only the rules that apply to the current task:
+## Commands
+
+The repository is currently in its documentation-only initialization phase and has no package manifest or runnable commands. When scaffolding is added, expose and document these pnpm scripts consistently:
+
+```bash
+pnpm install
+pnpm dev
+pnpm build
+pnpm test
+pnpm lint
+pnpm format
+pnpm start
+```
+
+Do not claim a command works until it exists and has been verified.
+
+## Architecture
+
+One Node.js process owns the CLI, loopback HTTP listener, host-based route selection, request-header transformations, streaming proxy, WebSocket upgrades, management API, configuration persistence, and production static-file serving. Vite is development/build tooling, not the production server.
+
+The management UI uses the reserved `defftra.localhost` hostname on the active listener port. Dashboard application groups are derived from exact upstream target URLs. A group can have an optional user-defined display name and must expose a one-click action for every configured route in that group.
+
+See `docs/architecture.md` for conceptual boundaries and dependency direction.
+
+## Current Source Layout
+
+There is no application source tree yet. The first implementation pass must create the six top-level boundaries `src/cli/`, `src/core/`, `src/contracts/`, `src/persistence/`, `src/server/`, and `src/ui/`. The React UI is further divided into `app/`, `pages/`, `domains/`, and `shared/`. Follow `.agents/rules/architecture-node-react-full-stack.md`.
+
+## Documentation
 
 | File | Purpose |
 |------|---------|
-| `.agents/rules/stack.md` | Runtime, framework, tooling, dependency, and integration rules |
-| `.agents/rules/documentation-and-diagrams.md` | Documentation conventions and mandatory Mermaid diagram rules |
-| `.agents/rules/code-conventions.md` | Language-agnostic code conventions |
-| `.agents/rules/code-conventions-typescript.md` | TypeScript-specific conventions |
-| `.agents/rules/code-conventions-react.md` | React-specific conventions |
-| `.agents/rules/code-conventions-java.md` | Java-specific conventions |
-| `.agents/rules/code-conventions-swift-macos.md` | Swift desktop macOS app conventions |
-| `.agents/rules/architecture-react-app.md` | React app source layout and dependency rules |
+| `README.md` | Public overview and project status |
+| `docs/project-brief.md` | Product goals, users, workflows, constraints, terminology |
+| `docs/architecture.md` | System shape, boundaries, data flow, and test strategy |
+| `docs/domain-model.md` | Configuration entities and invariants |
+| `docs/api.md` | Management API and proxy contract baseline |
+| `docs/configuration.md` | Persistence and route configuration behavior |
+| `docs/ui.md` | Dashboard and route-management UX requirements |
+| `docs/operations.md` | CLI, listener, logging, and failure behavior |
+| `SECURITY.md` | Security boundary and vulnerability reporting |
+| `CONTRIBUTING.md` | Contribution expectations |
 
-## Skill Index
+## Rule Index
 
-Use skills only when they match the task:
+Use only the rules relevant to the task:
 
-| Skill | Purpose |
-|-------|---------|
-| `.agents/skills/project-initialization/SKILL.md` | First setup pass for a new project: gather context, ask clarifying questions, create initial docs, and replace template placeholders with real project guidance |
+| File | Purpose |
+|------|---------|
+| `.agents/rules/stack.md` | Project-specific runtime, tooling, dependency, persistence, and integration rules |
+| `.agents/rules/documentation-and-diagrams.md` | Documentation and Mermaid diagram rules |
+| `.agents/rules/code-conventions.md` | Language-agnostic conventions |
+| `.agents/rules/code-conventions-typescript.md` | TypeScript conventions |
+| `.agents/rules/code-conventions-react.md` | React conventions |
+| `.agents/rules/architecture-node-react-full-stack.md` | Full-stack Node.js boundaries and React UI layout |
 
-## Source Layout
+## Diagrams
 
-Placeholder: document the real module boundaries after the project is initialized.
+Use Mermaid when a diagram improves communication. Do not create ASCII-art, ANSI-art, or Unicode box-drawing diagrams. Follow `.agents/rules/documentation-and-diagrams.md`.
+
+## Task Notes
+
+Use `.agents/tasks/<task-name>/TASK.md` for investigation findings, plans, decisions, and handoff state that must persist across sessions. Keep reusable rules in `.agents/rules/`, project facts in `docs/`, and transient notes in the conversation.
