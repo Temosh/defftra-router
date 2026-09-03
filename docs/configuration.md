@@ -4,7 +4,7 @@
 
 Normal configuration is performed through the Web UI. Manual file editing is not required and may be rejected if it produces an invalid document.
 
-Route and group-name changes become active immediately after a successful management API mutation; the Node.js process does not restart. Listener host and port changes are persisted by the same API but take effect on the next startup.
+Environment, profile, application, hostname-variant, rule, target, and target-selection changes become active immediately after a successful management API update. Listener host and port changes are persisted by the same API but take effect on the next startup.
 
 ## Storage
 
@@ -20,7 +20,7 @@ Do not store configuration in the repository, current working directory, or an A
 
 ## Safe Writes
 
-Persist a complete validated document to a uniquely named sibling temporary file, flush and close it, then atomically replace the active file. A failed write removes its temporary file where possible. Temporary files left by an interrupted process are not yet cleaned automatically on startup.
+Persist a complete validated document to a uniquely named sibling temporary file, flush and close it, then atomically replace the active file. A failed write removes its temporary file where possible.
 
 If validation or persistence fails:
 
@@ -35,40 +35,136 @@ On startup:
 1. Resolve the application-owned data location.
 2. Read the configuration if it exists.
 3. Parse and validate its schema version and complete content.
-4. Migrate only through explicit, tested schema migrations.
-5. Publish one immutable active snapshot.
+4. Publish one immutable active snapshot.
 
-Invalid persisted configuration must produce a clear configuration error and must not be silently discarded or overwritten.
+Invalid persisted configuration produces a clear configuration error and is not silently discarded or overwritten.
 
 ## Sensitive Values
 
 Header values may contain credentials or tokens. Do not log them, include them in telemetry, or expose them outside the management UI/API. The project does not collect telemetry or transmit configuration externally.
 
+V1 stores configured header values in the local JSON file. Environment-variable substitution and operating-system secret storage are deferred.
+
 ## Schema Version 1
+
+The project has not been released. This target schema version 1 replaces the earlier scaffold schema without a migration.
 
 ```json
 {
   "schemaVersion": 1,
   "listener": { "host": "127.0.0.1", "port": 80 },
-  "routes": [
+  "environments": [
+    { "id": "local", "displayName": "LOCAL" },
+    { "id": "test", "displayName": "TEST" }
+  ],
+  "profiles": [
     {
-      "id": "7f2d0f08-514c-495e-8b22-76eb9bbb8b93",
-      "displayName": "App with test headers",
-      "hostname": "app-test.localhost",
-      "target": "http://127.0.0.1:3000/",
-      "enabled": true,
+      "id": "profile-a",
+      "displayName": "Profile A",
       "transformations": [
-        { "operation": "SET", "name": "x-example-mode", "value": "test" },
-        { "operation": "REMOVE", "name": "x-old-mode" }
+        { "operation": "SET", "name": "x-example-mode", "value": "a" }
       ]
     }
   ],
-  "groupDisplayNames": [
-    { "target": "http://127.0.0.1:3000/", "displayName": "Example app" }
+  "applications": [
+    {
+      "id": "example-app",
+      "displayName": "Example App",
+      "variants": [
+        {
+          "id": "example-default",
+          "displayName": "Default",
+          "hostname": "example.localhost",
+          "enabled": true,
+          "profileIds": []
+        },
+        {
+          "id": "example-profile-a",
+          "displayName": "Profile A",
+          "hostname": "profile-a.example.localhost",
+          "enabled": true,
+          "profileIds": ["profile-a"]
+        }
+      ],
+      "rules": [
+        {
+          "id": "example-api",
+          "displayName": "API",
+          "enabled": true,
+          "match": { "type": "PREFIX", "pathname": "/api" },
+          "targets": [
+            {
+              "environmentId": "local",
+              "url": "http://127.0.0.1:8080/"
+            },
+            {
+              "environmentId": "test",
+              "url": "https://api-test.example.invalid/"
+            }
+          ],
+          "selectedEnvironmentId": "local",
+          "applyVariantProfiles": true,
+          "transformations": []
+        },
+        {
+          "id": "example-default",
+          "displayName": "Frontend",
+          "enabled": true,
+          "match": { "type": "DEFAULT" },
+          "targets": [
+            {
+              "environmentId": "local",
+              "url": "http://127.0.0.1:5173/"
+            },
+            {
+              "environmentId": "test",
+              "url": "https://frontend-test.example.invalid/"
+            }
+          ],
+          "selectedEnvironmentId": "test",
+          "applyVariantProfiles": false,
+          "transformations": []
+        }
+      ]
+    }
   ]
 }
 ```
 
-IDs are opaque non-empty strings up to 128 characters; the UI generates UUIDs. Hostnames and header names are normalized to lowercase, and target URLs are normalized through the URL parser. Unknown properties are rejected. Listener hosts are restricted to `127.0.0.1` and `::1`; ports are 1–65535.
+## Environment Rules
 
-Version 1 has no migrations or backup file. Unsupported versions fail validation without changing the active file or snapshot.
+- `environments` is ordered for display.
+- The first entry is always `{ "id": "local", "displayName": "LOCAL" }`.
+- The reserved entry cannot be removed, renamed, or duplicated.
+- All other IDs and display names are user-defined.
+- Environment display names are unique case-insensitively.
+- Removing an environment requires first removing all target mappings and selections that reference it.
+- An environment definition does not contain a global URL. Each path rule maps that environment to its own upstream URL.
+
+This design allows `LOCAL` to mean different loopback ports for different rules and allows the same remote environment to use different services.
+
+## Path Rules And Targets
+
+- Every application contains exactly one enabled `DEFAULT` rule.
+- `EXACT` and `PREFIX` matches require a normalized pathname beginning with `/`.
+- `DEFAULT` does not accept a pathname.
+- Duplicate exact paths and duplicate normalized prefixes within an application are invalid.
+- A rule has at most one target mapping per environment.
+- `selectedEnvironmentId` must reference one of that rule's targets.
+- Target URLs are absolute `http:` or `https:` URLs without credentials or fragments.
+- Target paths prefix the complete incoming path; matching does not implicitly rewrite or strip it.
+
+## Profiles And Transformations
+
+- Profile IDs referenced by variants must exist.
+- A variant cannot reference the same profile more than once.
+- Profiles apply in reference order when a matched rule has `applyVariantProfiles: true`.
+- Rule transformations apply after profile transformations.
+- Header names are normalized to lowercase.
+- Unknown fields are rejected at every level.
+
+## Limits
+
+IDs are opaque non-empty strings up to 128 characters; the UI generates UUIDs. Display names are at most 160 characters. Hostnames are at most 253 characters. URLs are at most 2048 characters. A profile or rule has at most 100 transformations. Reasonable upper bounds must also be enforced for environments, profiles, applications, variants, rules, and targets to protect the local management API from oversized configurations.
+
+Listener hosts are restricted to `127.0.0.1` and `::1`; configured ports are 1–65535.

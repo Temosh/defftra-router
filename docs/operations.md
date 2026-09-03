@@ -7,13 +7,13 @@
 - Runtime: Node.js 26.
 - Package manager for development: pnpm.
 
-Defftra Router requires no Docker daemon, database, external service, or Internet connection at runtime.
+Defftra Router requires no Docker daemon, database, or external control service. Local targets work without Internet access. User-configured remote targets require whatever network or VPN access those upstreams normally require.
 
 ## Build And Startup
 
-Run `pnpm build` from a dependency-installed checkout to create the standalone `dist/` directory. The build contains the server, CLI, and management API as one `defftra-router.mjs` bundle alongside the compiled UI; it has no runtime package-install step. Keep the directory intact because the bundle resolves the UI relative to itself.
+Run `pnpm build` from a dependency-installed checkout to create the local runnable `dist/` output. It contains the server, CLI, and management API as one `defftra-router.mjs` bundle alongside the compiled UI; it has no runtime package-install step. Keep the directory intact because the bundle resolves the UI relative to itself.
 
-The deliverable includes `run-windows.cmd` and `run-macos.command`. They verify that Node.js 26 or newer is available, locate the CLI relative to themselves, and forward every command-line argument unchanged. Windows users can double-click `run-windows.cmd` or invoke it from Command Prompt or PowerShell. macOS users can double-click `run-macos.command` or invoke it from Terminal.
+The build output includes `run-windows.cmd` and `run-macos.command`. They verify that Node.js 26 or newer is available, locate the CLI relative to themselves, and forward every command-line argument unchanged. Windows users can double-click `run-windows.cmd` or invoke it from Command Prompt or PowerShell. macOS users can double-click `run-macos.command` or invoke it from Terminal.
 
 Run from the repository with `pnpm start`, use the launchers under `dist/`, or run the bundle directly with `node dist/defftra-router.mjs`. From inside `dist/`, use a launcher or run `node defftra-router.mjs`. The package declares a `defftra-router` binary for future packaged distributions, but no registry or platform installer is published yet.
 
@@ -44,23 +44,25 @@ Default logging includes:
 - Configuration errors.
 - Proxy failures.
 
-Optional debug logging may include matched route identity, method/path, target, and timing. Never log request/response bodies or configured/request header values by default.
+Optional debug logging may include matched application, hostname variant, rule, selected environment, method/path, target, and timing. Never log request/response bodies or configured/request header values by default.
 
 Do not retain persistent or in-memory request history and do not emit telemetry.
 
 ## Failure Behavior
 
-| Failure                         | Expected behavior                                         |
-| ------------------------------- | --------------------------------------------------------- |
-| Unknown hostname                | Lightweight local page with management link               |
-| Disabled route                  | Explain that the route is disabled and link to management |
-| Invalid persisted configuration | Clear startup error; do not overwrite the file            |
-| Invalid API candidate           | Inline-capable validation response; keep prior snapshot   |
-| Unsupported upstream protocol   | Reject during validation                                  |
-| Upstream unavailable            | Useful gateway-style response and minimal error log       |
-| Upstream timeout                | Abort cleanly and return a useful timeout response        |
-| Listener bind failure           | Interactive offer to retry on 8088                        |
+| Failure                         | Expected behavior                                            |
+| ------------------------------- | ------------------------------------------------------------ |
+| Unknown hostname                | Lightweight local page with management link                  |
+| Disabled hostname variant       | Explain that the variant is disabled and link to management  |
+| No eligible path rule or target | Explain the invalid runtime state without forwarding traffic |
+| Invalid persisted configuration | Clear startup error; do not overwrite the file               |
+| Invalid API candidate           | Inline-capable validation response; keep prior snapshot      |
+| Unsupported upstream protocol   | Reject anything other than HTTP or HTTPS during validation   |
+| Upstream unavailable            | Useful gateway-style response and minimal error log          |
+| Upstream DNS or TLS failure     | Classified, non-sensitive gateway-style response             |
+| Upstream timeout                | Abort cleanly and return a useful timeout response           |
+| Listener bind failure           | Interactive offer to retry on 8088                           |
 
 ## Resource Verification
 
-Before calling V1 release-ready, measure idle RAM and CPU on supported Windows and macOS environments, verify that no polling timers keep the process active, and exercise repeated HTTP/WebSocket connections for leaks.
+Before calling V1 release-ready, measure idle RAM and CPU on supported Windows and macOS environments, verify that no polling timers keep the process active, and exercise repeated HTTP, HTTPS, WebSocket, and secure WebSocket connections for leaks.

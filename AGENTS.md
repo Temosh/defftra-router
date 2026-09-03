@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Defftra Router is an open-source, UI-driven local HTTP reverse proxy for developers. It routes `.localhost` hostnames to local development servers and applies arbitrary, ordered request-header transformations. Windows 11 without administrator rights is the primary target; macOS is also supported.
+Defftra Router is an open-source, UI-driven local HTTP reverse proxy for developers. It gives applications stable `.localhost` hostname variants, routes paths to independently selected local or remote target environments, and applies reusable ordered request-header profiles. Windows 11 without administrator rights is the primary target; macOS is also supported.
 
 Keep this file as the short entry point for all coding agents. Detailed guidance belongs in `.agents/rules/`, product facts in `docs/`, and durable workstream notes in `.agents/tasks/`.
 
@@ -16,7 +16,7 @@ Keep this file as the short entry point for all coding agents. Detailed guidance
 
 - Keep all route and header behavior domain-neutral. Never hardcode authentication, tenant, realm, company, or specific-header semantics.
 - Bind only to loopback by default. Do not expose the proxy or management interface to the LAN by default.
-- V1 accepts HTTP local traffic and HTTP upstream targets only.
+- V1 accepts HTTP local traffic and HTTP or HTTPS upstream targets. Local HTTPS is deferred.
 - Stream proxy traffic; do not buffer whole request or response bodies.
 - Do not keep traffic history or log request bodies or header values.
 - Persist configuration as human-readable, versioned JSON. Do not introduce a database.
@@ -53,7 +53,9 @@ pnpm start
 
 One Node.js process owns the CLI, loopback HTTP listener, host-based route selection, request-header transformations, streaming proxy, WebSocket upgrades, management API, configuration persistence, and production static-file serving. Vite is development/build tooling, not the production server.
 
-The management UI uses the reserved `router.localhost` hostname on the active listener port. Dashboard application groups are derived from exact upstream target URLs. A group can have an optional user-defined display name and must expose a one-click action for every configured route in that group.
+The management UI uses the reserved `router.localhost` hostname on the active listener port. The dashboard is organized by user-defined applications. Each application owns shared path rules and one or more stable `.localhost` hostname variants. Variants select ordered request-header profiles without duplicating the application's routing table.
+
+Target environments are an ordered, user-configurable list. The reserved `LOCAL` environment always exists and cannot be deleted; all other environment names are defined by the user. Every path rule maps the environments it supports to concrete upstream URLs and independently selects its active environment, allowing a local frontend to use a remote API or a remote frontend to use a local API.
 
 See `docs/architecture.md` for conceptual boundaries and dependency direction.
 
