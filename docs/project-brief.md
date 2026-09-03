@@ -46,7 +46,7 @@ V1 has one local operator role. It has no accounts, remote users, or authorizati
 
 ### Open a configured application flow
 
-1. Open the dashboard at `defftra.localhost` using the active port.
+1. Open the dashboard at `router.localhost` using the active port.
 2. Find the application group derived from an exact upstream target URL.
 3. Choose one of its route options.
 4. Navigate to that route's actual local URL, including the port when it is not 80.
@@ -72,7 +72,7 @@ V1 has one local operator role. It has no accounts, remote users, or authorizati
 - Multiple hostnames may target the same upstream.
 - A disabled route does not proxy.
 - Path and query string are preserved.
-- GET, POST bodies, streamed bodies, streamed responses, redirects, status codes, and response headers are preserved.
+- GET, POST bodies, streamed bodies, streamed responses, redirects, status codes, and response headers are preserved, except that redirect caching headers are overridden to prevent browsers from retaining local-development redirects.
 - Connection reuse is used where appropriate.
 - Timeouts and upstream failures produce useful, non-sensitive errors.
 - WebSocket upgrades are proxied.
@@ -80,16 +80,16 @@ V1 has one local operator role. It has no accounts, remote users, or authorizati
 
 ## Terminology
 
-| Term | Meaning |
-|------|---------|
-| Route | A hostname-to-upstream mapping plus enabled state and ordered transformations |
-| Local URL | The browser-facing HTTP URL formed from the route hostname and active listener port |
-| Upstream target | The exact HTTP URL receiving proxied traffic |
-| Application group | Dashboard grouping derived from routes with exactly equal upstream target URLs |
-| Group display name | Optional user-defined dashboard label associated with an exact upstream target |
-| Transformation | One ordered `SET`, `APPEND`, or `REMOVE` operation on a request header |
-| Management host | Reserved `defftra.localhost` hostname serving the UI and API |
-| Active snapshot | Immutable validated route configuration currently used for routing |
+| Term               | Meaning                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| Route              | A hostname-to-upstream mapping plus enabled state and ordered transformations       |
+| Local URL          | The browser-facing HTTP URL formed from the route hostname and active listener port |
+| Upstream target    | The exact HTTP URL receiving proxied traffic                                        |
+| Application group  | Dashboard grouping derived from routes with exactly equal upstream target URLs      |
+| Group display name | Optional user-defined dashboard label associated with an exact upstream target      |
+| Transformation     | One ordered `SET`, `APPEND`, or `REMOVE` operation on a request header              |
+| Management host    | Reserved `router.localhost` hostname serving the UI and API                         |
+| Active snapshot    | Immutable validated route configuration currently used for routing                  |
 
 ## Security And Privacy Constraints
 
@@ -105,15 +105,13 @@ V1 has one local operator role. It has no accounts, remote users, or authorizati
 
 Automated tests must cover hostname selection, shared upstreams, enabled state, every transformation, header-name case insensitivity, path/query/body streaming, upstream status and headers, response streaming, unknown hosts, validation, persistence/reload, live updates, upstream failure, timeouts, and WebSocket proxying. Tests use ephemeral loopback servers and require no Internet access.
 
-## Open Implementation Decisions
+## Implementation Baseline
 
-- Concrete management API paths, payload schemas, and error codes.
-- Concrete JSON schema and migration strategy beyond mandatory schema versioning.
-- Host header forwarding policy.
-- Incoming path composition when an upstream target URL contains a path.
-- Exact `APPEND` wire semantics for headers whose values cannot be safely comma-combined.
-- Storage representation for optional group display names.
-- Whether disabled routes appear on the launch dashboard.
-- Non-interactive behavior after a listener bind failure.
-- CLI distribution and publishing workflow.
-- Minimum supported macOS and browser versions.
+- The management API uses whole-document `GET` and `PUT` operations under `/api/config`; see [api.md](api.md).
+- Persisted configuration uses schema version 1; see [configuration.md](configuration.md).
+- The upstream target owns `Host`. Its path and query prefix the incoming path and query.
+- `APPEND` preserves ordered logical values and uses Node.js HTTP serialization.
+- Group display names are target-keyed metadata records. Disabled routes remain visible but cannot launch.
+- Non-interactive listener failures exit nonzero. Interactive port-80 failures offer port 8088.
+
+Release work remains for registry/platform packaging, supported browser and macOS version declarations, and resource measurements on Windows and macOS.

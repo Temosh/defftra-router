@@ -37,8 +37,6 @@ Use latest stable package versions compatible with Node.js 26. Record resolved v
 
 ## Commands
 
-The repository is currently in its documentation-only initialization phase and has no package manifest or runnable commands. When scaffolding is added, expose and document these pnpm scripts consistently:
-
 ```bash
 pnpm install
 pnpm dev
@@ -49,47 +47,47 @@ pnpm format
 pnpm start
 ```
 
-Do not claim a command works until it exists and has been verified.
+`pnpm typecheck` and `pnpm format:check` provide non-mutating checks. Integration tests use ephemeral loopback listeners. Do not claim a command works unless it has been verified after relevant changes.
 
 ## Architecture
 
 One Node.js process owns the CLI, loopback HTTP listener, host-based route selection, request-header transformations, streaming proxy, WebSocket upgrades, management API, configuration persistence, and production static-file serving. Vite is development/build tooling, not the production server.
 
-The management UI uses the reserved `defftra.localhost` hostname on the active listener port. Dashboard application groups are derived from exact upstream target URLs. A group can have an optional user-defined display name and must expose a one-click action for every configured route in that group.
+The management UI uses the reserved `router.localhost` hostname on the active listener port. Dashboard application groups are derived from exact upstream target URLs. A group can have an optional user-defined display name and must expose a one-click action for every configured route in that group.
 
 See `docs/architecture.md` for conceptual boundaries and dependency direction.
 
 ## Current Source Layout
 
-There is no application source tree yet. The first implementation pass must create the six top-level boundaries `src/cli/`, `src/core/`, `src/contracts/`, `src/persistence/`, `src/server/`, and `src/ui/`. The React UI is further divided into `app/`, `pages/`, `domains/`, and `shared/`. Follow `.agents/rules/architecture-node-react-full-stack.md`.
+The application uses the six top-level boundaries `src/cli/`, `src/core/`, `src/contracts/`, `src/persistence/`, `src/server/`, and `src/ui/`. The React UI is divided into `app/`, `pages/`, `domains/`, and `shared/`. Cross-boundary integration tests live in `tests/integration/`. Follow `.agents/rules/architecture-node-react-full-stack.md`.
 
 ## Documentation
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Public overview and project status |
+| File                    | Purpose                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| `README.md`             | Public overview and project status                        |
 | `docs/project-brief.md` | Product goals, users, workflows, constraints, terminology |
-| `docs/architecture.md` | System shape, boundaries, data flow, and test strategy |
-| `docs/domain-model.md` | Configuration entities and invariants |
-| `docs/api.md` | Management API and proxy contract baseline |
-| `docs/configuration.md` | Persistence and route configuration behavior |
-| `docs/ui.md` | Dashboard and route-management UX requirements |
-| `docs/operations.md` | CLI, listener, logging, and failure behavior |
-| `SECURITY.md` | Security boundary and vulnerability reporting |
-| `CONTRIBUTING.md` | Contribution expectations |
+| `docs/architecture.md`  | System shape, boundaries, data flow, and test strategy    |
+| `docs/domain-model.md`  | Configuration entities and invariants                     |
+| `docs/api.md`           | Management API and proxy contract baseline                |
+| `docs/configuration.md` | Persistence and route configuration behavior              |
+| `docs/ui.md`            | Dashboard and route-management UX requirements            |
+| `docs/operations.md`    | CLI, listener, logging, and failure behavior              |
+| `SECURITY.md`           | Security boundary and vulnerability reporting             |
+| `CONTRIBUTING.md`       | Contribution expectations                                 |
 
 ## Rule Index
 
 Use only the rules relevant to the task:
 
-| File | Purpose |
-|------|---------|
-| `.agents/rules/stack.md` | Project-specific runtime, tooling, dependency, persistence, and integration rules |
-| `.agents/rules/documentation-and-diagrams.md` | Documentation and Mermaid diagram rules |
-| `.agents/rules/code-conventions.md` | Language-agnostic conventions |
-| `.agents/rules/code-conventions-typescript.md` | TypeScript conventions |
-| `.agents/rules/code-conventions-react.md` | React conventions |
-| `.agents/rules/architecture-node-react-full-stack.md` | Full-stack Node.js boundaries and React UI layout |
+| File                                                  | Purpose                                                                           |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `.agents/rules/stack.md`                              | Project-specific runtime, tooling, dependency, persistence, and integration rules |
+| `.agents/rules/documentation-and-diagrams.md`         | Documentation and Mermaid diagram rules                                           |
+| `.agents/rules/code-conventions.md`                   | Language-agnostic conventions                                                     |
+| `.agents/rules/code-conventions-typescript.md`        | TypeScript conventions                                                            |
+| `.agents/rules/code-conventions-react.md`             | React conventions                                                                 |
+| `.agents/rules/architecture-node-react-full-stack.md` | Full-stack Node.js boundaries and React UI layout                                 |
 
 ## Diagrams
 

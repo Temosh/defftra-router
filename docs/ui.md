@@ -4,7 +4,7 @@
 
 The React UI is clean, compact, developer-oriented, keyboard-usable, and responsive to long hostnames, targets, and header names. Prefer clarity and fast configuration over decorative complexity.
 
-The production UI is compiled by Vite and served by the Defftra Router Node.js process at the reserved `defftra.localhost` hostname.
+The production UI is compiled by Vite and served by the Defftra Router Node.js process at the reserved `router.localhost` hostname.
 
 ## Application Dashboard
 
@@ -14,7 +14,7 @@ Group routes by exact upstream target URL. Each card shows:
 - Exact upstream target.
 - Every configured route as a clearly labeled one-click launch option.
 - Each route's actual local URL, including the listener port when it is not 80.
-- A concise indication of disabled routes; whether they remain visible here is still to be decided.
+- A concise indication of disabled routes. Disabled routes remain visible but cannot be launched.
 - A direct path to route configuration.
 
 Selecting a route launches that exact hostname so users can choose among multiple configured flows for the same application with one click.
@@ -38,7 +38,7 @@ Deletion requires explicit confirmation. Open must use the actual route URL.
 The editor contains:
 
 - Display name.
-- Hostname.
+- Local hostname with a fixed `.localhost` suffix and actual-URL preview.
 - HTTP upstream target.
 - Enabled toggle.
 - Ordered request-header transformation rows.
@@ -46,6 +46,8 @@ The editor contains:
 Each transformation row contains an operation selector, arbitrary header-name input, value input for `SET` and `APPEND`, and accessible delete/reorder controls. `REMOVE` does not require a value.
 
 Show field-level validation inline, preserve the draft after a failed save, and prevent duplicate submissions.
+
+Fast inline actions such as enabling or disabling a route show progress in the initiating control without inserting transient page-level banners or shifting surrounding content. Save failures remain visibly persistent.
 
 ## Required States
 

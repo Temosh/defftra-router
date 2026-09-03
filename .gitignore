@@ -42,6 +42,8 @@ out/
 .parcel-cache/
 .cache/
 coverage/
+playwright-report/
+test-results/
 *.tsbuildinfo
 
 # Java / JVM
